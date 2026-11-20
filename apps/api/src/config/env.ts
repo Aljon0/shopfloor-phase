@@ -9,6 +9,8 @@ const schema = z.object({
   SESSION_HOURS: z.coerce.number().int().min(1).max(72).default(10),
   /** Set true when the site is served over HTTPS. Plain-HTTP LAN installs keep it false. */
   COOKIE_SECURE: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+  /** Number of reverse proxies in front of the API (0 = none). Behind the bundled nginx set 1 so the login limit applies per computer, not to everyone at once. */
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
   /** Browser origins allowed to call the API with the session cookie (comma separated). */
   ALLOWED_ORIGINS: z
     .string()

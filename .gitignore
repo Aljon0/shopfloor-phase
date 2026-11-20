@@ -5,3 +5,4 @@ dist
 *.log
 *.tsbuildinfo
 apps/api/src/generated
+backups

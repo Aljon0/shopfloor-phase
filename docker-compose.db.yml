@@ -1,4 +1,4 @@
-# Development PostgreSQL for ShopFloor (Phase 8). Phase 9 replaces this with the full Docker Compose stack.
+# Development PostgreSQL for ShopFloor (Phase 8). For development only. The full stack (web, API, database) is docker-compose.yml, see docs/DEPLOYMENT.md.
 #   docker compose -f docker-compose.db.yml up -d
 services:
   db:

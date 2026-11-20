@@ -17,6 +17,10 @@
     "db:down": "docker compose -f docker-compose.db.yml down",
     "db:generate": "npm run db:generate -w apps/api",
     "db:migrate": "npm run db:migrate -w apps/api",
-    "db:seed": "npm run db:seed -w apps/api"
+    "db:seed": "npm run db:seed -w apps/api",
+    "stack:up": "docker compose up -d --build",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f",
+    "stack:seed": "docker compose run --rm api npm run db:seed"
   }
 }
