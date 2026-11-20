@@ -37,7 +37,7 @@ async function parseError(res: Response): Promise<ApiError> {
   return new ApiError(res.status, code, message, err ? toFields(err.details) : {})
 }
 
-export async function apiRequest<T>(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown): Promise<T> {
+export async function apiRequest<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> {
   let res: Response
   try {
     res = await fetch(`/api${path}`, {
@@ -58,6 +58,7 @@ export const api = {
   get: <T>(path: string) => apiRequest<T>('GET', path),
   post: <T = void>(path: string, body?: unknown) => apiRequest<T>('POST', path, body ?? {}),
   patch: <T>(path: string, body: unknown) => apiRequest<T>('PATCH', path, body),
+  delete: (path: string) => apiRequest<void>('DELETE', path),
 }
 
 /** The most specific message to show a person: field messages from the server, else the error message. */

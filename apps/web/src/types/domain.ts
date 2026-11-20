@@ -80,6 +80,8 @@ export interface ProductionReport {
   /** Calendar date, YYYY-MM-DD, factory local. */
   reportDate: string
   operatorName: string
+  /** Account id of the operator. Set by the real API (used to show edit actions only to the owner). */
+  operatorId?: string
   /** Planned output for this shift. Dashboard target achievement sums these. */
   shiftTarget: number
   producedQuantity: number
@@ -121,6 +123,8 @@ export interface DowntimeEvent {
   category: DowntimeCategory
   notes: string
   recordedBy: string
+  /** Account id of whoever recorded it. Set by the real API (used to show edit actions only to the owner). */
+  recordedById?: string
 }
 
 export type ActivityKind = 'report_submitted' | 'report_approved' | 'report_returned' | 'downtime_recorded'
