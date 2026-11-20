@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { mockRepository, setMockLatency } from '@/mocks/repository'
 import { getReportDetail } from '@/features/production-reports/services/reports-service'
-import { DowntimeRuleError, createDowntimeEvent, getDowntimeReference, listDowntimeItems, updateDowntimeEvent } from './downtime-service'
+import { DowntimeRuleError, createDowntimeEvent, getDowntimeReference, listDowntimeItems, updateDowntimeEvent } from './downtime-mock-service'
 import type { DowntimeInput } from '../types'
 
 // Sundays have no production in the seed, so 2026-11-01 is free on every machine.

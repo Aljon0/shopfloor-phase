@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { useAuth } from '@/hooks/use-auth'
 import { formatFactoryDateTime } from '@/lib/dates'
+import { isApiMode } from '@/lib/config'
 import { canRecordReports, canReviewReports } from '@/lib/permissions'
 import { ReportActions } from './components/report-actions'
 import { ReportMetricsCard, ReportSummaryCard } from './components/report-summary-card'
@@ -101,7 +102,7 @@ export function ReportDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ReportActions report={report} canRecord={canRecordReports(user?.role)} />
+          <ReportActions report={report} canRecord={canRecordReports(user?.role) && (!isApiMode || report.operatorId === user?.id)} />
           {canReviewReports(user?.role) && (isAwaitingReview(report.status) || report.status === 'approved') ? (
             <Button asChild>
               <Link to={`/approvals/${report.id}`}>{report.status === 'approved' ? 'Approval actions' : 'Review report'}</Link>
