@@ -11,6 +11,7 @@ import { downtimeRouter } from './modules/downtime/downtime.routes'
 import { ordersRouter } from './modules/orders/orders.routes'
 import { referenceRouter } from './modules/reference/reference.routes'
 import { qualityRouter } from './modules/quality/quality.routes'
+import { readModelsRouter } from './modules/read-models/read-models.routes'
 import { reportsRouter } from './modules/reports/reports.routes'
 import { settingsRouter } from './modules/settings/settings.routes'
 
@@ -40,6 +41,10 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/approvals', approvalsRouter(deps))
   app.use('/api/downtime', downtimeRouter(deps))
   app.use('/api/quality', qualityRouter(deps))
+  const readModels = readModelsRouter(deps)
+  app.use('/api/dashboard', readModels.dashboard)
+  app.use('/api/analytics', readModels.analytics)
+  app.use('/api/report-summary', readModels.summary)
   app.use('/api/settings', settingsRouter(deps))
 
   app.use(notFoundHandler)
