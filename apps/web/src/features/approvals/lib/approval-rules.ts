@@ -12,38 +12,17 @@
  *   until it is corrected, resubmitted and approved again. Nothing is overwritten; every step is
  *   in the report's history.
  */
-import { isAwaitingReview } from '@/features/production-reports/lib/report-rules'
-import type { ReportStatus } from '@/types/status'
 import type { ApprovalItem } from '../types'
 
-export const MIN_REASON_LENGTH = 5
-export const MAX_REASON_LENGTH = 300
-
-export function canApprove(status: ReportStatus): boolean {
-  return isAwaitingReview(status)
-}
-
-export function canReturn(status: ReportStatus): boolean {
-  return isAwaitingReview(status)
-}
-
-export function canReopen(status: ReportStatus): boolean {
-  return status === 'approved'
-}
-
-/** Returns an error message, or null when the reason is acceptable. */
-export function validateReason(reason: string): string | null {
-  const trimmed = reason.trim()
-  if (trimmed.length < MIN_REASON_LENGTH) return `Enter a reason of at least ${MIN_REASON_LENGTH} characters.`
-  if (trimmed.length > MAX_REASON_LENGTH) return `Keep the reason under ${MAX_REASON_LENGTH} characters.`
-  return null
-}
-
-/** True when the reviewer is the person who filed the report (names compared ignoring case and spacing). */
-export function isSelfReview(reviewer: string, operatorName: string): boolean {
-  const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase()
-  return normalize(reviewer) !== '' && normalize(reviewer) === normalize(operatorName)
-}
+export {
+  MAX_REASON_LENGTH,
+  MIN_REASON_LENGTH,
+  canApprove,
+  canReopen,
+  canReturn,
+  isSelfReview,
+  validateReason,
+} from '@shopfloor/shared'
 
 /** Longest-waiting first, so nothing sits at the bottom of the queue. */
 export function sortQueue(items: readonly ApprovalItem[]): ApprovalItem[] {

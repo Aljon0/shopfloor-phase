@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { setMockLatency, mockRepository } from '@/mocks/repository'
 import { ReportRuleError, createReport, getReportDetail, listReportItems, submitReport } from '@/features/production-reports/services/reports-service'
 import type { ReportInput } from '@/features/production-reports/types'
-import { ApprovalRuleError, approveReport, listApprovalItems, reopenReport, returnReport } from './approvals-service'
+import { ApprovalRuleError, approveReport, listApprovalItems, reopenReport, returnReport } from './approvals-mock-service'
 
 const base: ReportInput = {
   orderId: 'PO-2026-003',
