@@ -8,7 +8,7 @@ import { DOWNTIME_CATEGORY_LABELS } from '@/lib/labels'
 import { isEventLocked } from '../lib/downtime-rules'
 import type { DowntimeListItem } from '../types'
 
-export function DowntimeTable({ items, canEdit }: { items: DowntimeListItem[]; canEdit: boolean }) {
+export function DowntimeTable({ items, canEdit, canEditEvent }: { items: DowntimeListItem[]; canEdit: boolean; canEditEvent?: (event: DowntimeListItem['event']) => boolean }) {
   return (
     <Card>
       <Table>
@@ -69,7 +69,7 @@ export function DowntimeTable({ items, canEdit }: { items: DowntimeListItem[]; c
                       <Lock className="h-3.5 w-3.5" aria-hidden="true" />
                       Locked
                     </span>
-                  ) : (
+                  ) : canEditEvent && !canEditEvent(event) ? null : (
                     <Link
                       to={`/downtime/${event.id}/edit`}
                       className="inline-flex items-center gap-1 text-primary hover:underline"

@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/use-auth'
+import { isApiMode } from '@/lib/config'
 import { canRecordDowntime } from '@/lib/permissions'
 import { DowntimeFiltersBar } from './components/downtime-filters-bar'
 import { DowntimeSummaryCards } from './components/downtime-summary-cards'
@@ -97,7 +98,11 @@ export function DowntimePage() {
               <p className="mb-2 text-sm text-muted" aria-live="polite">
                 Showing {visible.length} of {total} {total === 1 ? 'event' : 'events'}
               </p>
-              <DowntimeTable items={visible} canEdit={canRecord} />
+              <DowntimeTable
+                items={visible}
+                canEdit={canRecord}
+                canEditEvent={(e) => !isApiMode || user?.role === 'supervisor' || e.recordedById === user?.id}
+              />
             </>
           )}
         </>
