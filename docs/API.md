@@ -1,4 +1,4 @@
-# ShopFloor API reference (Phase 8A)
+# ShopFloor API reference (Phase 8A–8B)
 
 Base path `/api`. JSON in and out. The session is the `shopfloor_session` cookie (httpOnly); the web app sends it automatically.
 
@@ -28,6 +28,20 @@ Errors always look like `{ "error": { "code": "...", "message": "...", "details"
 | GET | `/auth/me` | `{ user: { id, name, email, role } }` |
 | POST | `/auth/change-password` | `{ currentPassword, newPassword }`; signs out other sessions, keeps this one |
 | GET | `/reference` | Lines, products, machines, defect types, shifts (for forms) |
+
+## Production orders (8B)
+Read: manager, supervisor, operator. Write: supervisor only. Administrators get 403.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/orders` | List of `{ order, productName, lineName, progress, overdue }`. Progress counts approved reports only; pending reports are shown separately. |
+| GET | `/orders/:orderNumber` | Detail: order, progress, reports, downtime, timeline (order history). 404 if missing. |
+| POST | `/orders` | `{ productId, lineId, plannedQuantity, plannedStart, dueDate, priority, instructions, status }`, status `draft` or `planned`. Number `PO-<year>-NNN` is assigned by the server (factory time zone Asia/Manila), never reused. 201. |
+| PATCH | `/orders/:orderNumber` | Same fields without `status`. Product and line are locked once In Progress; planned quantity cannot drop below the quantity already reported; Completed and Cancelled orders cannot be edited. |
+| POST | `/orders/:orderNumber/status` | `{ to, reason? }`. Draft→Planned→In Progress→Completed; any open status→Cancelled (reason of 3+ characters required). |
+
+Every create, edit and status change writes an order history entry with the actor taken from the session. Changes to one order are serialised with a row lock, so simultaneous requests cannot overwrite each other.
+Report, downtime and quality activity appears on an order once those modules move to the API (8C/8D).
 
 ## Administrator only
 | Method | Path | Notes |

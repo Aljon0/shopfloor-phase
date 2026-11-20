@@ -3,15 +3,11 @@
  * timestamps are ISO strings with an offset and are displayed in factory local time.
  */
 
+import { isValidDateString } from '@shopfloor/shared'
+
 export const FACTORY_TIME_ZONE = 'Asia/Manila'
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-
-export function isValidDateString(value: string): boolean {
-  if (!DATE_PATTERN.test(value)) return false
-  const d = new Date(`${value}T00:00:00Z`)
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value
-}
+export { isValidDateString }
 
 export function addDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`)

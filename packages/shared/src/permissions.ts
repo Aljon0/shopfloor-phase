@@ -6,3 +6,7 @@ import type { Role } from './roles'
  */
 export const canManageSettings = (role: Role | undefined): boolean => role === 'administrator'
 export const canViewReference = (role: Role | undefined): boolean => role !== undefined
+
+/** Supervisors create, edit and move production orders; managers, supervisors and operators can read them (administrators do not use production screens). */
+export const canManageOrders = (role: Role | undefined): boolean => role === 'supervisor'
+export const canViewOrders = (role: Role | undefined): boolean => role === 'manager' || role === 'supervisor' || role === 'operator'

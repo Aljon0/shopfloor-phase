@@ -16,7 +16,7 @@ export function SystemSection() {
     ['Company', 'Northstar Metalworks (demo)'],
     ['Time zone', `${FACTORY_TIME_ZONE} (factory local time)`],
     ['Factory date in the demo', getFactoryToday()],
-    ['Data', isApiMode ? 'Users and Settings are stored in the database. Orders, reports, downtime and quality are still demo data in the browser until the next backend phases.' : 'Mock data in the browser. Changes reset when the page reloads.'],
+    ['Data', isApiMode ? 'Users, Settings and production orders are stored in the database. Reports, approvals, downtime and quality are still demo data in the browser until the next backend phases.' : 'Mock data in the browser. Changes reset when the page reloads.'],
     ['Deployment', isApiMode ? 'LAN-first web application with a Node API and PostgreSQL.' : 'LAN-first web application (run with VITE_DATA_SOURCE=api to use the backend).'],
   ]
   return (
