@@ -39,6 +39,9 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in .env (the address people type in the browser)}
       TRUST_PROXY: "1"
       SEED_PASSWORD: ${SEED_PASSWORD:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.groq.com/openai/v1}
+      AI_MODEL: ${AI_MODEL:-llama-3.3-70b-versatile}
     # Port 4000 is internal only; people reach the API through the web container.
 
   web:

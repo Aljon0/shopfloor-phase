@@ -11,6 +11,12 @@ const schema = z.object({
   COOKIE_SECURE: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   /** Number of reverse proxies in front of the API (0 = none). Behind the bundled nginx set 1 so the login limit applies per computer, not to everyone at once. */
   TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+  /** Optional AI summary. Without a key the feature reports "not configured" and nothing else changes. */
+  AI_API_KEY: z.string().optional().transform((v) => (v && v.trim() ? v.trim() : undefined)),
+  /** Any OpenAI-compatible chat-completions API. Default is Groq. */
+  AI_BASE_URL: z.string().url().default('https://api.groq.com/openai/v1'),
+  AI_MODEL: z.string().min(1).default('llama-3.3-70b-versatile'),
+  AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(20_000),
   /** Browser origins allowed to call the API with the session cookie (comma separated). */
   ALLOWED_ORIGINS: z
     .string()
