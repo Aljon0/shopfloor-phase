@@ -7,7 +7,7 @@ import {
   getOrderDetail,
   listOrderItems,
   updateOrder,
-} from './orders-service'
+} from './orders-mock-service'
 import type { OrderInput } from '../types'
 
 const input: OrderInput = {

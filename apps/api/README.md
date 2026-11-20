@@ -1,8 +1,8 @@
-# ShopFloor API (Phase 8A)
+# ShopFloor API (Phase 8A–8B)
 
 Node + Express 5 + Prisma 7 + PostgreSQL. Phase 8A covers the foundation: database schema for every entity,
 migrations, seed data, real sign-in with role-based access, and the Settings module.
-Orders, reports, approvals, downtime, quality, dashboard and analytics move over in 8B–8D; until then those screens keep using demo data in the browser.
+Phase 8B adds production orders. Reports, approvals, downtime, quality, dashboard and analytics move over in 8C–8D; until then those screens keep using demo data in the browser.
 
 ## First-time setup (Windows, PowerShell, from the repo root)
 

@@ -6,6 +6,7 @@ import type { AppDeps } from './middleware/context'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
 import { originGuard } from './middleware/origin-guard'
 import { authRouter } from './modules/auth/auth.routes'
+import { ordersRouter } from './modules/orders/orders.routes'
 import { referenceRouter } from './modules/reference/reference.routes'
 import { settingsRouter } from './modules/settings/settings.routes'
 
@@ -30,6 +31,7 @@ export function createApp(deps: AppDeps): Express {
 
   app.use('/api/auth', authRouter(deps))
   app.use('/api/reference', authenticate(deps), referenceRouter(deps))
+  app.use('/api/orders', ordersRouter(deps))
   app.use('/api/settings', settingsRouter(deps))
 
   app.use(notFoundHandler)
