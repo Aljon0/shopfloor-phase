@@ -1,0 +1,378 @@
+// ShopFloor data model. PostgreSQL.
+//
+// Conventions
+// - Text primary keys. Reference data uses readable slugs ('line-cut-01'); orders and reports keep
+//   their business numbers ('PO-2026-001', 'RPT-20261103-CUT-AM') because people quote them.
+// - Calendar dates (planned start, report date) are DATE; moments in time are TIMESTAMPTZ.
+// - Nothing is hard-deleted. Reference data is deactivated (isActive = false) so history stays valid,
+//   and foreign keys use ON DELETE RESTRICT so a referenced row can never disappear.
+// - CHECK constraints that Prisma cannot express are added by hand at the end of the first migration.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  administrator
+  manager
+  supervisor
+  operator
+}
+
+enum OrderStatus {
+  draft
+  planned
+  in_progress
+  completed
+  cancelled
+}
+
+enum Priority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum ReportStatus {
+  draft
+  pending_review
+  returned
+  revised
+  approved
+}
+
+enum DowntimeCategory {
+  machine_maintenance
+  equipment_failure
+  material_shortage
+  changeover
+  operator_delay
+  other
+}
+
+enum ApprovalDecision {
+  approved
+  returned
+  reopened
+}
+
+enum AuditAction {
+  created
+  updated
+  activated
+  deactivated
+  password_reset
+  password_changed
+}
+
+model User {
+  id           String   @id
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  /// Incremented when the password, role or active flag changes; tokens issued earlier stop working.
+  tokenVersion Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  ordersCreated     ProductionOrder[]
+  orderHistory      OrderHistory[]
+  reports           ProductionReport[]  @relation("ReportOperator")
+  reportsReviewed   ProductionReport[]  @relation("ReportReviewer")
+  reportHistory     ReportHistory[]
+  approvals         Approval[]
+  downtimeRecorded  DowntimeEvent[]
+  inspections       QualityInspection[]
+  auditLogs         AuditLog[]
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Product {
+  id        String   @id
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  orders      ProductionOrder[]
+  inspections QualityInspection[]
+
+  @@map("products")
+}
+
+model ProductionLine {
+  id        String   @id
+  name      String   @unique
+  /// Short code used in report numbers. Fixed once created.
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  machines Machine[]
+  orders   ProductionOrder[]
+  reports  ProductionReport[]
+  downtime DowntimeEvent[]
+
+  @@map("production_lines")
+}
+
+model Machine {
+  id          String   @id
+  name        String   @unique
+  lineId      String
+  /// Standard output per shift; copied onto each report when it is created.
+  shiftTarget Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  line     ProductionLine     @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  reports  ProductionReport[]
+  downtime DowntimeEvent[]
+
+  @@index([lineId])
+  @@map("machines")
+}
+
+/// Cutting, bending, welding, inspection.
+model Operation {
+  id        String @id
+  name      String @unique
+  sortOrder Int
+
+  orderOperations OrderOperation[]
+
+  @@map("operations")
+}
+
+model Shift {
+  id        String @id // 'morning' | 'night'
+  name      String
+  /// 'HH:MM' factory local time. A shift that ends before it starts runs overnight.
+  startTime String
+  endTime   String
+
+  reports ProductionReport[]
+
+  @@map("shifts")
+}
+
+model ProductionOrder {
+  id              String      @id // business number, e.g. PO-2026-001
+  orderNumber     String      @unique
+  productId       String
+  lineId          String
+  plannedQuantity Int
+  plannedStart    DateTime    @db.Date
+  dueDate         DateTime    @db.Date
+  priority        Priority    @default(normal)
+  instructions    String      @default("")
+  status          OrderStatus @default(draft)
+  cancelReason    String?
+  createdById     String
+  createdAt       DateTime    @default(now()) @db.Timestamptz
+  updatedAt       DateTime    @updatedAt @db.Timestamptz
+
+  product    Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  line       ProductionLine      @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  createdBy  User                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  operations OrderOperation[]
+  history    OrderHistory[]
+  reports    ProductionReport[]
+  downtime   DowntimeEvent[]
+  inspections QualityInspection[]
+
+  @@index([status, plannedStart])
+  @@index([productId])
+  @@index([lineId, status])
+  @@map("production_orders")
+}
+
+model OrderOperation {
+  orderId     String
+  operationId String
+  sequence    Int
+
+  order     ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  operation Operation       @relation(fields: [operationId], references: [id], onDelete: Restrict)
+
+  @@id([orderId, operationId])
+  @@unique([orderId, sequence])
+  @@map("order_operations")
+}
+
+model OrderHistory {
+  id        String   @id
+  orderId   String
+  timestamp DateTime @default(now()) @db.Timestamptz
+  actorId   String
+  action    String // created | updated | status_changed
+  detail    String
+
+  order ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  actor User            @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, timestamp])
+  @@map("order_history")
+}
+
+model ProductionReport {
+  id               String       @id // e.g. RPT-20261103-CUT-AM
+  orderId          String
+  lineId           String
+  machineId        String
+  shiftId          String
+  reportDate       DateTime     @db.Date
+  operatorId       String
+  shiftTarget      Int
+  producedQuantity Int
+  rejectedQuantity Int
+  status           ReportStatus @default(draft)
+  submittedAt      DateTime?    @db.Timestamptz
+  reviewedAt       DateTime?    @db.Timestamptz
+  reviewedById     String?
+  returnReason     String?
+  notes            String       @default("")
+  createdAt        DateTime     @default(now()) @db.Timestamptz
+  updatedAt        DateTime     @updatedAt @db.Timestamptz
+
+  order      ProductionOrder     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  line       ProductionLine      @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  machine    Machine             @relation(fields: [machineId], references: [id], onDelete: Restrict)
+  shift      Shift               @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  operator   User                @relation("ReportOperator", fields: [operatorId], references: [id], onDelete: Restrict)
+  reviewedBy User?               @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  history    ReportHistory[]
+  approvals  Approval[]
+  downtime   DowntimeEvent[]
+  inspections QualityInspection[]
+
+  /// One report per machine, shift and day.
+  @@unique([machineId, shiftId, reportDate])
+  @@index([status, reportDate])
+  @@index([orderId])
+  @@index([lineId, reportDate])
+  @@map("production_reports")
+}
+
+model ReportHistory {
+  id        String   @id
+  reportId  String
+  timestamp DateTime @default(now()) @db.Timestamptz
+  actorId   String
+  action    String // created | updated | submitted | resubmitted | approved | returned | reopened
+  detail    String
+
+  report ProductionReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  actor  User             @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([reportId, timestamp])
+  @@map("report_history")
+}
+
+/// Review decisions, kept separately so the full approval trail is queryable.
+model Approval {
+  id         String           @id
+  reportId   String
+  decision   ApprovalDecision
+  reviewerId String
+  reason     String?
+  decidedAt  DateTime         @default(now()) @db.Timestamptz
+
+  report   ProductionReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  reviewer User             @relation(fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  @@index([reportId, decidedAt])
+  @@map("approvals")
+}
+
+model DowntimeEvent {
+  id           String           @id
+  lineId       String
+  machineId    String
+  orderId      String?
+  reportId     String?
+  startTime    DateTime         @db.Timestamptz
+  endTime      DateTime         @db.Timestamptz
+  category     DowntimeCategory
+  notes        String           @default("")
+  recordedById String
+  createdAt    DateTime         @default(now()) @db.Timestamptz
+
+  line       ProductionLine    @relation(fields: [lineId], references: [id], onDelete: Restrict)
+  machine    Machine           @relation(fields: [machineId], references: [id], onDelete: Restrict)
+  order      ProductionOrder?  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  report     ProductionReport? @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  recordedBy User              @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([machineId, startTime])
+  @@index([startTime])
+  @@map("downtime_events")
+}
+
+model DefectType {
+  id        String   @id
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  inspections QualityInspection[]
+
+  @@map("defects")
+}
+
+model QualityInspection {
+  id               String   @id
+  orderId          String
+  reportId         String?
+  productId        String
+  inspectionDate   DateTime @db.Date
+  inspectedQuantity Int
+  passedQuantity   Int
+  failedQuantity   Int
+  defectId         String?
+  notes            String   @default("")
+  inspectorId      String
+  createdAt        DateTime @default(now()) @db.Timestamptz
+  updatedAt        DateTime @updatedAt @db.Timestamptz
+
+  order     ProductionOrder   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  report    ProductionReport? @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  defect    DefectType?       @relation(fields: [defectId], references: [id], onDelete: Restrict)
+  inspector User              @relation(fields: [inspectorId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([inspectionDate])
+  @@map("quality_inspections")
+}
+
+/// Traceable configuration changes and security events (who, what, when).
+model AuditLog {
+  id        String      @id
+  timestamp DateTime    @default(now()) @db.Timestamptz
+  actorId   String?
+  /// 'user' | 'product' | 'line' | 'machine' | 'shift' | 'defect_type' | 'auth'
+  entity    String
+  entityId  String
+  action    AuditAction
+  detail    String
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([timestamp])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}

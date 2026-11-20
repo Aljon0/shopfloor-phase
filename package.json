@@ -1,0 +1,22 @@
+{
+  "name": "shopfloor",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "typecheck": "npm run typecheck -w apps/web && npm run typecheck -w apps/api",
+    "test": "npm run test -w apps/web && npm run test -w apps/api",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web:api": "npm run dev -w apps/web",
+    "db:up": "docker compose -f docker-compose.db.yml up -d",
+    "db:down": "docker compose -f docker-compose.db.yml down",
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api"
+  }
+}

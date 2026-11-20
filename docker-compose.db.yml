@@ -1,0 +1,23 @@
+# Development PostgreSQL for ShopFloor (Phase 8). Phase 9 replaces this with the full Docker Compose stack.
+#   docker compose -f docker-compose.db.yml up -d
+services:
+  db:
+    image: postgres:16
+    container_name: shopfloor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shopfloor
+      POSTGRES_PASSWORD: shopfloor
+      POSTGRES_DB: shopfloor
+    ports:
+      - "5432:5432"
+    volumes:
+      - shopfloor-pgdata:/var/lib/postgresql/data
+      - ./infra/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopfloor -d shopfloor"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  shopfloor-pgdata:
