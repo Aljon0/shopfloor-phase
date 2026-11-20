@@ -17,6 +17,7 @@ import { LinePerformanceTable } from './components/line-performance-table'
 import { PendingApprovalsCard } from './components/pending-approvals-card'
 import { ProductionChart } from './components/production-chart'
 import { RecentActivityCard } from './components/recent-activity-card'
+import { InsightsCard } from '@/features/insights/components/insights-card'
 import { useDashboard } from './hooks/use-dashboard'
 import type { DateRange } from './lib/aggregate'
 import { resolveRange, type RangePreset } from './lib/date-range'
@@ -96,6 +97,7 @@ export function DashboardPage() {
             </div>
             <DowntimeSummary categories={data.downtimeByCategory} totalMinutes={data.kpis.downtimeMinutes} />
           </div>
+          {user?.role === 'manager' || user?.role === 'supervisor' ? <InsightsCard range={data.range} /> : null}
           <RecentActivityCard items={data.recentActivity} />
         </div>
       )}

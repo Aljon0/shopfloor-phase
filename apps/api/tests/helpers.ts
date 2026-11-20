@@ -1,5 +1,6 @@
 import supertest from 'supertest'
 import { createApp } from '../src/app'
+import type { AppDeps } from '../src/middleware/context'
 import { loadEnv } from '../src/config/env'
 import { createDb, type Db } from '../src/db/client'
 import { hashPassword } from '../src/lib/password'
@@ -23,7 +24,7 @@ const USERS = [
   { id: 'user-op', name: 'Juan Dela Cruz', email: 'juan@x.example', role: 'operator' },
 ] as const
 
-export async function startTestApp(): Promise<TestApp> {
+export async function startTestApp(extra: Partial<Pick<AppDeps, 'narrative'>> = {}): Promise<TestApp> {
   if (!TEST_DATABASE_URL) throw new Error('TEST_DATABASE_URL is not set')
   await resetTestDatabase(TEST_DATABASE_URL)
   const env = loadEnv({ NODE_ENV: 'test', DATABASE_URL: TEST_DATABASE_URL, JWT_SECRET: 'integration-test-secret-0123456789abcdef', ALLOWED_ORIGINS: ORIGIN })
@@ -35,7 +36,7 @@ export async function startTestApp(): Promise<TestApp> {
   await db.product.create({ data: { id: 'prod-bracket', name: 'Steel mounting brackets' } })
   await db.defectType.createMany({ data: [{ id: 'defect-a', name: 'Burr' }, { id: 'defect-b', name: 'Other' }] })
   await db.shift.create({ data: { id: 'morning', name: 'Morning', startTime: '06:00', endTime: '18:00' } })
-  const app = createApp({ db, env })
+  const app = createApp({ db, env, ...extra })
   return {
     db,
     request: () => supertest(app),

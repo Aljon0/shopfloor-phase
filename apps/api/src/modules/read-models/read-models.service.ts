@@ -125,9 +125,9 @@ export async function loadActivity(db: Db): Promise<ActivityItem[]> {
   return items
 }
 
-export async function dashboard(db: Db, range: DateRange) {
+export async function dashboard(db: Db, range: DateRange, withActivity = true) {
   assertRange(range)
-  const { machines: _machines, ...input } = await load(db, range, true)
+  const { machines: _machines, ...input } = await load(db, range, withActivity)
   return buildDashboard(input, range)
 }
 
