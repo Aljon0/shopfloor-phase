@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { getReportDetail } from '@/features/production-reports/services/reports-service'
 import { setMockLatency } from '@/mocks/repository'
-import { createInspection, getInspectionItem, getQualityReference, listInspectionItems, updateInspection } from './quality-service'
+import { createInspection, getInspectionItem, getQualityReference, listInspectionItems, updateInspection } from './quality-mock-service'
 import type { InspectionInput } from '../types'
 
 const input: InspectionInput = {
