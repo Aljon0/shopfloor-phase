@@ -1,21 +1,8 @@
-import { isValidDateString } from '@/lib/dates'
-import { mockRepository } from '@/mocks/repository'
-import type { DateRange } from '@/features/dashboard/lib/aggregate'
-import { buildAnalytics, type AnalyticsData } from '../lib/analytics'
+import { isApiMode } from '@/lib/config'
+import * as api from './analytics-api-service'
+import * as mock from './analytics-mock-service'
 
-/** Service boundary: swap the repository calls for an analytics endpoint when the API exists. */
-export async function fetchAnalytics(range: DateRange): Promise<AnalyticsData> {
-  if (!isValidDateString(range.from) || !isValidDateString(range.to) || range.from > range.to) {
-    throw new Error('Invalid date range')
-  }
-  const [lines, products, machines, orders, reports, downtimeEvents, activity] = await Promise.all([
-    mockRepository.listLines(),
-    mockRepository.listProducts(),
-    mockRepository.listMachines(),
-    mockRepository.listOrders(),
-    mockRepository.listReports(),
-    mockRepository.listDowntimeEvents(),
-    mockRepository.listActivity(),
-  ])
-  return buildAnalytics({ lines, products, machines, orders, reports, downtimeEvents, activity }, range)
-}
+/** The one entry point screens import; VITE_DATA_SOURCE picks the browser demo or the real API. */
+const impl = isApiMode ? api : mock
+
+export const fetchAnalytics = impl.fetchAnalytics
