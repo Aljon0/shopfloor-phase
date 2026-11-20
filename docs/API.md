@@ -1,4 +1,4 @@
-# ShopFloor API reference (Phase 8A–8D)
+# ShopFloor API reference (Phase 8A–10)
 
 Base path `/api`. JSON in and out. The session is the `shopfloor_session` cookie (httpOnly); the web app sends it automatically.
 
@@ -108,6 +108,16 @@ Computed on the server from the database with the same shared builders the brows
 A range must be valid, start on or before its end, and span at most 366 days (otherwise 400). Other roles get 403.
 
 Recent activity has no table of its own: it is derived from report history (submitted, resubmitted, approved, returned) and downtime events, newest first.
+
+## Insights (Phase 10)
+Roles: manager, supervisor. Others get 403.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/insights?from=&to=` | Trends against the previous period of the same length, plus anomaly flags with evidence and a "why" text. Rule-based, offline. Includes `aiConfigured`. |
+| POST | `/insights/narrative` | Body `{ from, to }`. Optional AI-written paragraph. Always HTTP 200: `status` is `ok`, `unavailable` (`not_configured`, `unreachable`, `error`) or `unverified` (the AI used a figure that is not in the facts, so it was withheld). 6 per minute per client. |
+
+Thresholds are constants in `packages/shared/src/insights.ts` (`INSIGHT_THRESHOLDS`): rejection rate 5% warning / 10% critical, target achievement under 80% / 60%, a downtime category at least 1.5x the previous period (and 60 minutes; 2x is critical), reports waiting 24 hours / 72 hours for review, and at least 3 approved reports before periods are compared.
 
 ## Administrator only
 | Method | Path | Notes |

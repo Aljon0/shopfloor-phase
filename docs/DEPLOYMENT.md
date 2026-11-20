@@ -59,6 +59,14 @@ These need real computers and cannot be done by the build; tick them off once:
 - [ ] Run a backup, delete something harmless, restore, confirm it came back.
 - [ ] Stop the database (`docker compose stop db`): `/api/health` should report unavailable; start it again and the app recovers.
 
+## Optional: AI summary (Phase 10)
+The Dashboard has an Insights card for managers and supervisors. **Trends and flags work fully offline**: they are fixed rules applied to the approved figures, and each flag has a "Why was this flagged?" explanation. The AI summary is an extra paragraph written from those same figures.
+- Off by default. To turn it on, put your provider key in `AI_API_KEY` in `.env` (Groq by default; any OpenAI-compatible service works via `AI_BASE_URL` and `AI_MODEL`), then `docker compose up -d`. The server PC needs internet for this feature only.
+- Only summary figures, line and category names and the flags are sent. No names of people, no free-text notes.
+- The AI only restates figures it was given. If its text contains any number that is not in those facts, the text is withheld and a message says so.
+- If the key is missing, the service is down or slow, the card says the AI summary is unavailable. Reporting, approvals and everything else keep working.
+- Pressing the button is what sends data; it is limited to 6 requests per minute per computer.
+
 ## Troubleshooting
 - "This request came from an origin that is not allowed" when saving: `ALLOWED_ORIGINS` does not exactly match the address in the browser bar (check http vs https, the port, spelling). Fix `.env`, then `docker compose up -d`.
 - Other computers cannot connect: firewall rule above, wrong network profile (Public), or the server PC's address changed.
