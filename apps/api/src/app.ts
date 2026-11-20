@@ -6,8 +6,12 @@ import type { AppDeps } from './middleware/context'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
 import { originGuard } from './middleware/origin-guard'
 import { authRouter } from './modules/auth/auth.routes'
+import { approvalsRouter } from './modules/approvals/approvals.routes'
+import { downtimeRouter } from './modules/downtime/downtime.routes'
 import { ordersRouter } from './modules/orders/orders.routes'
 import { referenceRouter } from './modules/reference/reference.routes'
+import { qualityRouter } from './modules/quality/quality.routes'
+import { reportsRouter } from './modules/reports/reports.routes'
 import { settingsRouter } from './modules/settings/settings.routes'
 
 /** Builds the Express app from its dependencies, so tests can run it against a test database. */
@@ -32,6 +36,10 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/auth', authRouter(deps))
   app.use('/api/reference', authenticate(deps), referenceRouter(deps))
   app.use('/api/orders', ordersRouter(deps))
+  app.use('/api/reports', reportsRouter(deps))
+  app.use('/api/approvals', approvalsRouter(deps))
+  app.use('/api/downtime', downtimeRouter(deps))
+  app.use('/api/quality', qualityRouter(deps))
   app.use('/api/settings', settingsRouter(deps))
 
   app.use(notFoundHandler)

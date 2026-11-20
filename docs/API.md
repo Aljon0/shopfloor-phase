@@ -1,4 +1,4 @@
-# ShopFloor API reference (Phase 8A–8B)
+# ShopFloor API reference (Phase 8A–8D)
 
 Base path `/api`. JSON in and out. The session is the `shopfloor_session` cookie (httpOnly); the web app sends it automatically.
 
@@ -42,6 +42,59 @@ Read: manager, supervisor, operator. Write: supervisor only. Administrators get 
 
 Every create, edit and status change writes an order history entry with the actor taken from the session. Changes to one order are serialised with a row lock, so simultaneous requests cannot overwrite each other.
 Report, downtime and quality activity appears on an order once those modules move to the API (8C/8D).
+
+## Production reports (8C)
+Read: manager, supervisor, operator. Write: operator only, and only on reports they filed (another operator gets 403). Administrators get 403.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/reports` | List of `{ report, productName, lineName, machineName, metrics }` |
+| GET | `/reports/reference` | Orders (id, status, plannedStart, line), lines, machines with shift targets, and `today` at the factory |
+| GET | `/reports/:reportId` | Detail with metrics, downtime, inspections, history timeline. 404 if missing. |
+| POST | `/reports` | `{ orderId, machineId, shift, reportDate, producedQuantity, rejectedQuantity, notes, mode }`, mode `draft` or `submit`. Order must be In Progress; machine must be active and on the order's line; one report per machine, shift and date. Number `RPT-YYYYMMDD-<line code>-<AM\|PM>` with `-2`, `-3`… when taken. 201. |
+| PATCH | `/reports/:reportId` | Same body. Only Draft or Returned reports; the order cannot change. `mode: submit` also sends it (Draft→Pending Review, Returned→Revised). |
+| POST | `/reports/:reportId/submit` | Submits a stored draft or returned report as it is |
+| DELETE | `/reports/:reportId` | Drafts only; 204 |
+
+Quantities must be whole numbers, 0 or more; rejected cannot exceed produced; the date cannot be in the future or before the order's planned start. The shift target is copied from the machine when the report is saved.
+
+## Approvals (8C)
+Supervisor only (everyone else gets 403).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/approvals` | Every submitted (non-draft) report with its downtime minutes |
+| POST | `/approvals/:reportId/approve` | Pending Review or Revised → Approved. Refused if the quantities are inconsistent. |
+| POST | `/approvals/:reportId/return` | `{ reason }` (5–300 characters). → Returned for Correction |
+| POST | `/approvals/:reportId/reopen` | `{ reason }`. Approved → Returned for Correction, out of the official figures until approved again |
+
+A reviewer cannot decide on a report they filed (checked by account, not by name). Each decision is stored in the approvals table and in the report's history. Decisions and edits on one report are serialised with a row lock, so two simultaneous decisions give one success and one 422.
+
+## Downtime (8D)
+Read: manager, supervisor, operator. Write: operator and supervisor. Administrators get 403.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/downtime` | List of `{ event, minutes, lineName, machineName, reportStatus }`. Minutes are calculated from start and end, never stored. |
+| GET | `/downtime/reference` | Lines, machines, orders, reports and `today` at the factory |
+| GET | `/downtime/:id` | One item; 404 if missing |
+| POST | `/downtime` | `{ machineId, orderId, reportId, startTime, endTime, category, notes }`. Times are factory-local `YYYY-MM-DDTHH:mm`; `orderId` and `reportId` may be `""`. Number `DT-NNNN`. 201. |
+| PATCH | `/downtime/:id` | Same body. Operators change only events they recorded; supervisors change any. |
+
+Rules: at most 24 hours, not in the future, end after start, no overlap with another event on the same machine (checked under a machine lock, so simultaneous requests cannot both succeed), the order must be on the machine's line, the report must be on the same machine, and an event linked to an Approved report is locked and cannot be linked to one.
+
+## Quality inspections (8D)
+Read: manager, supervisor. Write: supervisor (acting as inspector). Operators and administrators get 403.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/quality` | List of `{ inspection, productName, lineName, defectName, reportStatus, passRate }` |
+| GET | `/quality/reference` | Orders (with planned start), reports, defect types, `today` |
+| GET | `/quality/:id` | One item; 404 if missing |
+| POST | `/quality` | `{ orderId, reportId, inspectionDate, inspectedQuantity, failedQuantity, defectId, notes }`. Passed = inspected − failed (calculated). Order must be In Progress or Completed. Number `QI-YYYY-NNNN`. 201. |
+| PATCH | `/quality/:id` | Same body; the order cannot change |
+
+Rules: a defect is required when anything failed and dropped when nothing failed; a linked report must be on the same order and cover the inspected quantity; inactive defect types cannot be newly chosen (an existing one may be kept).
 
 ## Administrator only
 | Method | Path | Notes |
